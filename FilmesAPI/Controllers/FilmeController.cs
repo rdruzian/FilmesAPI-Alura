@@ -1,4 +1,5 @@
-﻿using FilmesAPI.Models;
+﻿using FilmesAPI.Data;
+using FilmesAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -11,29 +12,34 @@ namespace FilmesAPI.Controllers
     [Route("[controller]")]
     public class FilmeController : ControllerBase
     {
-        private static List<Filme> filmes = new List<Filme>();
-        private static int id = 1;
+        private FilmeContext _context { get; set; }
+
+        public FilmeController(FilmeContext context)
+        {
+            _context = context;
+        }
 
         [HttpPost]
         public IActionResult AdicionaFilme([FromBody] Filme filme)
         {
-            filme.Id = id++;
-            filmes.Add(filme);
-
+            //no _context tem acesso a lista de filmes, trabalhando igual anteriormente
+            _context.Filmes.Add(filme);
+            // SaveChanges realiza o insert no banco
+            _context.SaveChanges();
             // CreatedAtAction indica que o registro foi criado, mostra qual endpoint pode ser usado para recuperar o item, qual o ID e com qual dados ele foi craido
             return CreatedAtAction(nameof(RecuperarFilmeId), new { Id = filme.Id }, filme);
         }
 
         [HttpGet]
-        public IActionResult RecuperarFilmes()
+        public IEnumerable<Filme> RecuperarFilmes()
         {
-            return Ok(filmes);
+            return _context.Filmes;
         }
 
         [HttpGet("{id}")]
         public IActionResult RecuperarFilmeId(int id)
         {
-            var filme = filmes.FirstOrDefault(filme => filme.Id == id);
+            var filme = _context.Filmes.FirstOrDefault(filme => filme.Id == id);
             if (filme != null)
                 return Ok(filme);
 
